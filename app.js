@@ -42,6 +42,46 @@ document.addEventListener('DOMContentLoaded', () => {
                      .toLowerCase();
     }
 
+    async function fetchMXRecords(domain) {
+        const url = `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=15`;
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            const data = await response.json();
+            
+            if (data.Status !== 0) {
+                const errorMsg = data.Status === 3 ? 'Domain does not exist.' : `DNS Error (Code: ${data.Status})`;
+                throw new Error(errorMsg);
+            }
+
+            if (!data.Answer || data.Answer.length === 0) {
+                return [];
+            }
+
+            const records = data.Answer
+                .filter(ans => ans.type === 15)
+                .map(ans => {
+                    const parts = ans.data.split(' ');
+                    return {
+                        priority: parseInt(parts[0], 10),
+                        target: parts[1] ? parts[1].replace(/\.$/, '') : ans.data,
+                        ttl: ans.TTL
+                    };
+                })
+                .sort((a, b) => a.priority - b.priority);
+
+            return records;
+
+        } catch (error) {
+            console.error(`Error fetching MX records for ${domain}:`, error);
+            throw error;
+        }
+    }
+
     function renderBulkRecords(results) {
         bulkResults.innerHTML = '';
         
@@ -82,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <div class="mx-details">
                                 <div class="mx-target" title="${record.target}">${record.target}</div>
-                                <div class="mx-meta">TTL: ${record.ttl || 'N/A'}</div>
+                                <div class="mx-meta">TTL: ${record.ttl}s</div>
                             </div>
                             <button class="mx-copy" aria-label="Copy to clipboard" data-target="${record.target}">
                                 <i data-lucide="copy"></i>
@@ -144,25 +184,20 @@ document.addEventListener('DOMContentLoaded', () => {
         showState('loading');
 
         try {
-            // Send exactly ONE request for all domains to the backend
-            const response = await fetch('/api/bulk-mx', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ domains: uniqueDomains })
-            });
-
-            if (!response.ok) {
-                throw new Error('Server error: ' + response.statusText);
-            }
-
-            const data = await response.json();
+            // Fetch all concurrently from the client side (Works on GitHub Pages)
+            const results = await Promise.all(uniqueDomains.map(async (domain) => {
+                try {
+                    const records = await fetchMXRecords(domain);
+                    return { domain, records, error: null };
+                } catch (error) {
+                    return { domain, records: [], error: error.message };
+                }
+            }));
             
-            renderBulkRecords(data.results);
+            renderBulkRecords(results);
             showState('results');
         } catch (error) {
-            errorMessage.textContent = error.message || 'A critical error occurred while fetching records.';
+            errorMessage.textContent = 'A critical error occurred while fetching records.';
             showState('error');
         } finally {
             submitBtn.disabled = false;
