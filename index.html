@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlimited MX Lookup</title>
+    <meta name="description" content="Perform unlimited MX record lookups for any domain directly from your browser.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="background-elements">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    
+    <main class="container">
+        <header class="header">
+            <div class="logo">
+                <i data-lucide="mail-search"></i>
+            </div>
+            <h1>Unlimited MX Lookup</h1>
+            <p>Instantly fetch mail exchange records for any domain, with zero limits.</p>
+        </header>
+
+        <form id="lookup-form" class="search-form">
+            <div class="input-group">
+                <i data-lucide="globe" class="input-icon"></i>
+                <textarea 
+                    id="domain-input" 
+                    placeholder="Enter domains (comma separated or one per line)..." 
+                    autocomplete="off"
+                    spellcheck="false"
+                    required
+                    rows="3"
+                ></textarea>
+                <button type="submit" id="search-btn" class="btn-primary">
+                    <span class="btn-text">Lookup</span>
+                    <i data-lucide="arrow-right" class="btn-icon"></i>
+                </button>
+            </div>
+        </form>
+
+        <div id="results-container" class="results-container hidden">
+            <div class="results-header">
+                <h2>Bulk Results <span id="result-count" class="badge"></span></h2>
+            </div>
+            
+            <div id="loading-state" class="state-container hidden">
+                <div class="spinner"></div>
+                <p>Querying DNS servers...</p>
+            </div>
+
+            <div id="error-state" class="state-container error hidden">
+                <i data-lucide="alert-circle" class="error-icon"></i>
+                <p id="error-message">Failed to fetch records.</p>
+            </div>
+
+            <div id="empty-state" class="state-container empty hidden">
+                <i data-lucide="inbox" class="empty-icon"></i>
+                <p>No valid domains provided.</p>
+            </div>
+
+            <div id="bulk-results" class="bulk-results hidden">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
